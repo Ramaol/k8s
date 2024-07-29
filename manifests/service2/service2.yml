@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: telegram-svc
+  namespace: service2
+  labels:
+    app: telegram-svc
+spec:
+  selector:
+    matchLabels:
+      app: telegram-svc
+  replicas: 2
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: telegram-svc
+    spec:
+      containers:
+      - name: telegram-svc
+        image: registry.gitlab.com/devops2215521/service2:1370047149
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: TOKEN
+          valueFrom:
+            secretKeyRef: 
+              name: telegram-secret
+              key: token  
+        - name: CHAT_ID
+          valueFrom:
+            secretKeyRef:
+              name: telegram-secret
+              key: chat-id
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+          limits:
+            cpu: 100m
+            memory: 100Mi 
+        ports:
+        - containerPort: 5000
+          name: telegram-svc
+
+      imagePullSecrets: 
+      - name: gitlab-token-auth
+      restartPolicy: Always
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: telegram-svc
+  namespace: service2
+spec:
+  selector:
+    app: telegram-svc
+  type: ClusterIP
+  ports:
+  - name: telegram-svc
+    protocol: TCP
+    port: 80
+    targetPort: 5000
+---

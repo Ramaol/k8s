@@ -1,0 +1,42 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    release: kube-prometheus-stack
+    role: alert-rules
+  name: api-svc1-rule
+  namespace: monitoring
+spec:
+  groups:
+    - name: "cluster-alerts"
+      rules:
+        - alert: Service1PodDown
+          labels:
+            severity: critical
+            team: SRE 
+          for: 1s
+          expr: sum((up{container="api-service"})) < 2  
+          annotations:
+            message: The deployment in service1 namespace has less than 2 pod running.
+
+        
+        - alert: ToMuchErrorRate
+          labels:
+            severity: critical
+            team: SRE  
+          for: 1s 
+          expr: rate(app_request_count_total{container="api-service", http_status="4xx|5xx"}[1m]) > 0.01
+          annotations:
+            message: to much error in {{ $labels.container }} cotainer in namespace {{ $labels.namespace }} pod {{ $labels.pod }} in 1 minute
+        
+
+        - alert: ToMuchLantency
+          labels:
+            severity: critical
+            team: SRE  
+          expr: app_request_latency_seconds_sum > 0.006
+          annotations:
+            message: to much latency in pod {{ $labels.pod }} in namespace {{ $labels.namespace }} endpoint {{ $labels.exported_endpoint }} method {{ $labels.method }}
+        
+---
+ 

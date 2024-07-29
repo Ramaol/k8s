@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-service
+  namespace: service1
+  labels:
+    app: api-service
+spec:
+  selector:
+    matchLabels:
+      app: api-service
+  replicas: 2 
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: api-service
+    
+    spec:
+      containers:
+      - name: api-service
+        image: registry.gitlab.com/devops2215521/service1:1373136649
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 5000
+          name: api-service
+      restartPolicy: Always
+      imagePullSecrets:
+      - name: gitlab-token-auth
+---
+
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-service
+  namespace: service1
+  annotations:
+    prometheus.io/port: metrics
+    prometheus.io/scrape: 'true'
+  labels:
+    app: api-service
+    app.kubernetes.io/part-of: api-service
+spec:
+  selector:
+    app: api-service
+  ports:
+    - name: metrics
+      port: 80
+      targetPort: 5000
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: service1-monitor
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+spec:
+  endpoints:
+    - interval: 10s
+      port: metrics
+      scrapeTimeout: 10s
+  namespaceSelector:
+    matchNames:
+      - service1
+  selector:
+    matchLabels:
+      app.kubernetes.io/part-of: api-service

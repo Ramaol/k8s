@@ -1,0 +1,41 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: envoy-svc1-monitor
+  namespace: monitoring
+  labels: 
+    release: kube-prometheus-stack
+spec:
+  endpoints:
+    - interval: 5s
+      port: envo-ing-9901
+      path: /stats/prometheus
+      scrapeTimeout: 5s
+  namespaceSelector:
+    matchNames:
+      - service1
+  selector:
+    matchLabels:
+      app: envoy-svc1-ingress
+
+---
+
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: envoy-svc2-monitor
+  namespace: monitoring
+  labels: 
+    release: kube-prometheus-stack
+spec:
+  endpoints:
+    - interval: 5s
+      port: envo-ing-9901
+      path: /stats/prometheus
+      scrapeTimeout: 5s
+  namespaceSelector:
+    matchNames:
+      - service2
+  selector:
+    matchLabels:
+      app: envoy-svc2-ingress

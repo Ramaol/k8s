@@ -1,0 +1,9 @@
+dn: ou=People,dc=myldap,dc=com
+objectClass: organizationalUnit
+ou: People
+
+dn: ou=Group,dc=myldap,dc=com
+objectClass: organizationalUnit
+ou: Group
+
+

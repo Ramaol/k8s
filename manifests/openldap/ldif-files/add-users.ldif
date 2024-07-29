@@ -1,0 +1,21 @@
+# Add John Smith to the organization
+dn: uid=ramol021,ou=People,dc=myldap,dc=com
+objectClass: inetOrgPerson
+description: John Smith from Accounting.  John is the project
+  manager of the building project, so contact him with any qu
+ estions.
+cn: ramol mohseni
+sn: mohseni
+uid: ramol021
+userPassword: 12345678
+
+# Add Sally Brown to the organization
+dn: uid=alim,ou=People,dc=myldap,dc=com
+objectClass: inetOrgPerson
+description: Sally Brown from engineering.  Sally is responsibl
+ e for designing the blue prints and testing the structural int
+ egrity of the design.
+cn: ali mahabadi
+sn: mahabadi
+uid: alim
+userPassword: 12345678

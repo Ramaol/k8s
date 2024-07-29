@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: openldap
+  namespace: identity
+  labels:
+    app: openldap
+spec:
+  selector:
+    matchLabels:
+      app: openldap
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: openldap
+    spec:
+      containers:
+      - name: openldap
+        image: bitnami/openldap:latest
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            cpu: 100m
+            memory: 500Mi
+          limits:
+            cpu: 100m
+            memory: 500Mi
+
+        env:
+        - name: LDAP_ADMIN_USERNAME
+          value: admin
+        - name: LDAP_ADMIN_PASSWORD
+          value: 666ramol
+        - name: LDAP_USERS
+          value: ramol
+        - name: LDAP_PASSWORDS 
+          value: 666ramol
+        - name: LDAP_ROOT
+          value: dc=myldap,dc=com
+        - name: LDAP_ADMIN_DN
+          value: cn=admin,dc=myldap,dc=com
+        - name: LDAP_CONFIG_ADMIN_ENABLED
+          value: "yes"
+        - name: LDAP_CONFIG_ADMIN_PASSWORD
+          value: 666ramol        
+        - name: LDAP_CONFIG_ADMIN_USERNAME
+          value: admin
+        
+        ports:
+        - containerPort: 1389
+          name: openldap
+        - containerPort: 1636
+          name: openldap-ssl
+      restartPolicy: Always
+---

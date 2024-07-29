@@ -1,0 +1,172 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: envoy-config
+  namespace: service1
+data:
+  envoy.yaml: | 
+     
+     admin:
+        address:
+          socket_address:
+            address: 0.0.0.0
+            port_value: 9901
+
+     static_resources:
+      listeners:
+        - address:
+            socket_address:
+              address: 0.0.0.0
+              port_value: 10000
+          filter_chains:
+            - filters:
+                - name: envoy.filters.network.http_connection_manager
+                  typed_config: 
+                    "@type" : type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+                    stat_prefix: http_proxy
+                    route_config:
+                      name: all
+                      virtual_hosts:
+                        - name: all_backend_cluster
+                          domains:
+                            - 'myservice.com'
+                          routes:
+                            - match: { prefix: "/" }
+                              route:
+                                cluster: all_backend_cluster
+                                #prefix_rewrite: "/"
+  
+                    http_filters:
+                      - name: envoy.filters.http.router
+                        typed_config:
+                          "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+      clusters:
+        - name: all_backend_cluster
+          connect_timeout: 1s
+          type: STRICT_DNS
+          lb_policy: ROUND_ROBIN
+          load_assignment:
+            cluster_name: all_backend_cluster
+            endpoints:
+            - lb_endpoints:
+                - endpoint:
+                    address: 
+                      socket_address:
+                        address: api-service
+                        port_value: 80
+  
+---
+apiVersion: apps/v1
+kind: Deployment 
+metadata:
+  name: envoy-ingress
+  namespace: service1
+  labels:
+    app: envoy-ingress
+spec:
+  selector:
+    matchLabels:
+      app: envoy-ingress
+  replicas: 3
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: envoy-ingress
+    spec:
+      # initContainers:
+        # Init containers are exactly like regular containers, except:
+          # - Init containers always run to completion.
+          # - Each init container must complete successfully before the next one starts.
+      containers:
+      - name: envoy-ingress
+        image: "envoyproxy/envoy:v1.30-latest"
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+          limits:
+            cpu: 100m
+            memory: 100Mi
+        # livenessProbe:
+        #   tcpSocket:
+        #     port: 80
+        #   initialDelaySeconds: 5
+        #   timeoutSeconds: 5
+        #   successThreshold: 1
+        #   failureThreshold: 3
+        #   periodSeconds: 10
+        # readinessProbe:
+        #   httpGet:
+        #     path: /_status/healthz
+        #     port: 80
+        #   initialDelaySeconds: 5
+        #   timeoutSeconds: 2
+        #   successThreshold: 1
+        #   failureThreshold: 3
+        #   periodSeconds: 10
+        
+        # env:
+        # - name: envoy-config
+        #   valueFrom:
+        #     configMapKeyRef:
+        #       name: envoy-ingress
+        #       key: envoy-config
+        
+        ports:
+        - containerPort: 10000
+          name: envo-ing-10000
+        - containerPort: 9901
+          name: envo-ing-9901
+          protocol: TCP
+        # - containerPort: 8002
+        #   name: metrics
+        #   protocol: TCP
+                
+        volumeMounts:
+        - name: envoy-config
+          mountPath: /etc/envoy/ 
+      volumes:
+        - name: envoy-config
+          configMap:
+            name: envoy-config
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: envoy-ingress
+  namespace: service1
+  annotations:
+    prometheus.io/port: "envo-ing-9901"
+    prometheus.io/scrape: "true"
+  labels:
+    app: envoy-svc1-ingress
+spec:
+  selector:
+    app: envoy-ingress
+  type: ClusterIP
+  ports:
+  - name: envo-ing-10000
+    protocol: TCP
+    port: 80
+    targetPort: 10000
+
+    
+  - name: envo-ing-9901
+    protocol: TCP
+    port: 81
+    targetPort: 9901
+  
+  # - name: metrics
+  #   protocol: TCP
+  #   port: 82
+  #   targetPort: 8002
+
+---
+

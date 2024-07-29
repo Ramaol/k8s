@@ -1,0 +1,42 @@
+
+stages:
+  - build
+  - deploy
+
+
+build: 
+  stage: build
+  before_script:
+    - echo "$token" | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
+  script: 
+    - docker build -t $CI_REGISTRY/devops2215521/service2:"$CI_PIPELINE_ID" .
+    - echo $CI_REGISTRY   
+    - docker push $CI_REGISTRY/devops2215521/service2:"$CI_PIPELINE_ID"
+
+change manifest:
+  stage: deploy
+  dependencies:
+    - build
+
+  before_script: 
+    - apk update
+    - apk add git openssh-client         
+    - eval $(ssh-agent -s)
+    - mkdir -p ~/.ssh
+    - chmod 400 "$private_key"
+    - ssh-add "$private_key"
+    - cp "$SSH_KNOWN_HOSTS" ~/.ssh/known_hosts
+    - touch ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+    - chmod 700 ~/.ssh
+    - git config --global user.name "Radman Mohseni"
+    - git config --global user.email "mradman915@gmail.com"
+
+  script: 
+    - git clone git@gitlab.com:devops2215521/manifests.git          
+    - cd manifests/service2/
+    - export old_version=$(grep "image:" service2.yml | awk '{print $2}')
+    - sed -i "s,"$old_version","$CI_REGISTRY"/devops2215521/service2:"$CI_PIPELINE_ID",g" service2.yml
+    - git commit -am "image updated with pipeline-id "$CI_PIPELINE_ID""
+    - git push --set-upstream origin main
+

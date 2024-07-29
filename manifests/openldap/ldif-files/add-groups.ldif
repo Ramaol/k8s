@@ -1,0 +1,6 @@
+dn: cn=grafana,ou=Group,dc=myldap=,dc=com
+objectClass: groupOfUniqueNames
+objectClass: top
+cn: wpsContentAdministrators
+uniqueMember: uid=wpsadmin,ou=users,o=democorp,c=AU
+

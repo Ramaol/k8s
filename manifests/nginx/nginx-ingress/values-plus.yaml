@@ -1,0 +1,14 @@
+controller:
+  name: controller
+  nginxplus: true
+  image:
+    repository: nginx-plus-ingress
+    tag: "3.6.0"
+    digest: ""
+
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      additionalLabels:
+        release: kube-prometheus-stack
